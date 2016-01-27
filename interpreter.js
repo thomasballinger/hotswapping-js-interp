@@ -32,6 +32,14 @@
  */
 'use strict';
 
+// Shim: for testing in with node, use global object as window.
+if (typeof window === 'undefined') {
+  var window = global;
+  // code expects acorn to be globally available
+  global.acorn = require('./acorn');
+}
+
+
 /**
  * Create a new interpreter.
  * @param {string} code Raw JavaScript text.
@@ -2417,7 +2425,7 @@ Interpreter.prototype.getInitialProperties = function(){
   return scope.properties;
 }
 
-var initialProperties = (new Interpreter()).createInitialScope()
+var initialProperties = (new Interpreter()).getInitialProperties()
 
 // Find functions added to scope
 Interpreter.prototype.findNewFunctions = function(scope){
