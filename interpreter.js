@@ -33,10 +33,12 @@
 'use strict';
 
 // Shim: for testing in with node, use global object as window.
+// In the browser environment, please make both of these available.
 if (typeof window === 'undefined') {
   var window = global;
   // code expects acorn to be globally available
-  global.acorn = require('./acorn');
+  global.acorn = require('acorn');
+  global.acorn.walk = require('acorn/dist/walk');
 }
 
 
@@ -2470,6 +2472,10 @@ Interpreter.prototype.findNewFunctions = function(scopeProps){
 //
 // Every time a function is created, add it to a special (global to all interpreters)
 // location. Every variable lookup goes up to this special scope.
+//
+// What about unnamed functions? Passing around function objects is second-nature in JS!
+// Each time a *named* function is invoked (not looked up!) its body is looked up
+// in 
 
 
 Interpreter.interpForFunction = function(code, opt_initFunc) {

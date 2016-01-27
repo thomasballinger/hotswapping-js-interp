@@ -35,12 +35,17 @@ describe('JS interpreter', function(){
       assert.notProperty(newFuncs, 'a');
       assert.property(newFuncs, 'foo');
     });
+    it('are lookup up freshly on each invocation', function(){
+      var interp = new Interpreter(
+        `function foo(){ return a; }; var a = 1;`);
+    });
   });
 });
 
 describe('testing environment', function(){
   it('has globals', function(){
     assert.isDefined(acorn);
+    assert.isDefined(acorn.walk);
     assert.isDefined(Interpreter);
   });
 });
