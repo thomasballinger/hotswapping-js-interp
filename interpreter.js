@@ -2391,3 +2391,82 @@ Interpreter.prototype['stepWhileStatement'] =
 window['Interpreter'] = Interpreter;
 Interpreter.prototype['step'] = Interpreter.prototype.step;
 Interpreter.prototype['run'] = Interpreter.prototype.run;
+
+
+
+
+
+
+
+Interpreter.prototype['stepProgram'] = function() {
+  var state = this.stateStack[0];
+  var node = state.node;
+  var n = state.n_ || 0;
+  if (node.body[n]) {
+    state.n_ = n + 1;
+    this.stateStack.unshift({node: node.body[n]});
+  } else {
+    var funcs = this.findNewFunctions(this.stateStack.shift().scope);
+    console.log(funcs);
+  }
+};
+
+Interpreter.prototype.getInitialProperties = function(){
+  var scope = this.createObject(null);
+  this.initGlobalScope(scope);
+  return scope.properties;
+}
+
+var initialProperties = (new Interpreter()).createInitialScope()
+
+// Find functions added to scope
+Interpreter.prototype.findNewFunctions = function(scope){
+  var funcs = {};
+  for (var prop of Object.keys(scope.properties)){
+    if (!Object.prototype.hasOwnProperty.call(initialProperties, prop)) {
+      console.log('found new prop:', prop);
+      if (this.isa(scope.properties[prop], this.FUNCTION)) {
+        funcs[prop] = scope.properties[prop];
+      };
+    }
+  }
+  return funcs;
+}
+
+
+// In order to fire a missile with a function, we need to be able to package up
+// a function and deliver it to another interpreter which will run it.
+// Don't yet know how the simple case should be handled: should we harvest
+// functions and run them in new interpreters for each entity, or just
+// source code information, which is good because it'll stay up to date. Important
+// to be able to make changes to a missile function and partial changes there, so
+// important to check every interpreter to see when function calls occurred.
+//
+// Regardless, we need to be able to work with functions.
+// 1) to sent them to other interpreters, and
+// 2) to hot-swap them: if a function body changes, replace its body with the new
+//    body without requiring reexecution of the code that created it. We'll need
+//    to learn to commune with the parser for this.
+//
+// make function calls look in a global dict of function objects.
+//
+// plan:
+//
+// * harvest functions from the completed user's program.
+// * make a deep copy of scope so that other functions from this can't communicate
+// * run the function in a new interpreter for each entity for which the script is run
+//
+// New program: just the function call, and add it to the scope.
+//
+// Every time a function is created, add it to a special (global to all interpreters)
+// location. Every variable lookup goes up to this special scope.
+
+
+Interpreter.interpForFunction = function(code, opt_initFunc) {
+  this.initFunc_ = opt_initFunc;
+  this.UNDEFINED = this.createPrimitive(undefined);
+  this.ast = acorn.parse(code);
+  this.paused_ = false;
+  var scope = this.createScope(this.ast, null);
+  this.stateStack = [{node: this.ast, scope: scope, thisExpression: scope}];
+};
