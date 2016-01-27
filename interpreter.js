@@ -2456,6 +2456,7 @@ Interpreter.prototype.findNewFunctions = function(scopeProps){
 // Maybe harvesting functions isn't required? nah let's do it, it'll
 // be useful for debugging
 
+/*
 Interpreter.interpForFunction = function(func, opt_initFunc) {
   if (
   this.initFunc_ = opt_initFunc;
@@ -2465,3 +2466,4 @@ Interpreter.interpForFunction = function(func, opt_initFunc) {
   var scope = this.createScope(this.ast, null);
   this.stateStack = [{node: this.ast, scope: scope, thisExpression: scope}];
 };
+*/
