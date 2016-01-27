@@ -2405,10 +2405,6 @@ Interpreter.prototype['run'] = Interpreter.prototype.run;
 
 
 
-
-
-
-
 Interpreter.prototype['stepProgram'] = function() {
   var state = this.stateStack[0];
   var node = state.node;
@@ -2445,40 +2441,23 @@ Interpreter.prototype.findNewFunctions = function(scopeProps){
   return funcs;
 }
 
+// Plan:
+// first, make named functions always lookup ASTs in global scope
+// next, detect functions introduced by a user's program on completion
+// next, export a function (mostly its environment) from one interpreter to another
+//   carefully deepcopy function scope: it needs to be identity-correct wrt
+//   object types: interp1.ARRAY is different than interp2.ARRAY, carefully
+//   transfer over.
+// next, record when function body ast accesses happen
+// next, deepcopy entire interpreter state for rewinds
+// next, ast diffing to find what functions have changed
+// next, get source code line logging working from all functions
+//
+// Maybe harvesting functions isn't required? nah let's do it, it'll
+// be useful for debugging
 
-// In order to fire a missile with a function, we need to be able to package up
-// a function and deliver it to another interpreter which will run it.
-// Don't yet know how the simple case should be handled: should we harvest
-// functions and run them in new interpreters for each entity, or just
-// source code information, which is good because it'll stay up to date. Important
-// to be able to make changes to a missile function and partial changes there, so
-// important to check every interpreter to see when function calls occurred.
-//
-// Regardless, we need to be able to work with functions.
-// 1) to sent them to other interpreters, and
-// 2) to hot-swap them: if a function body changes, replace its body with the new
-//    body without requiring reexecution of the code that created it. We'll need
-//    to learn to commune with the parser for this.
-//
-// make function calls look in a global dict of function objects.
-//
-// plan:
-//
-// * harvest functions from the completed user's program.
-// * make a deep copy of scope so that other functions from this can't communicate
-// * run the function in a new interpreter for each entity for which the script is run
-//
-// New program: just the function call, and add it to the scope.
-//
-// Every time a function is created, add it to a special (global to all interpreters)
-// location. Every variable lookup goes up to this special scope.
-//
-// What about unnamed functions? Passing around function objects is second-nature in JS!
-// Each time a *named* function is invoked (not looked up!) its body is looked up
-// in 
-
-
-Interpreter.interpForFunction = function(code, opt_initFunc) {
+Interpreter.interpForFunction = function(func, opt_initFunc) {
+  if (
   this.initFunc_ = opt_initFunc;
   this.UNDEFINED = this.createPrimitive(undefined);
   this.ast = acorn.parse(code);
