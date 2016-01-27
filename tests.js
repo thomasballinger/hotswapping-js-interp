@@ -7,6 +7,43 @@ var assert = chai.assert;
 
 require('./interpreter.js'); // introduces global Interpreter object
 
+describe('testing environment', function(){
+  it('has globals', function(){
+    assert.isDefined(acorn);
+    assert.isDefined(acorn.walk);
+    assert.isDefined(Interpreter);
+  });
+});
+
+function makeWaitAndReady(){
+  var callWhenReady;
+  function initWait(interpreter, scope){
+    function wait(callback){
+      callWhenReady = callback;
+    }
+    interpreter.setProperty(scope, 'wait',
+                            interpreter.createAsyncFunction(wait));
+  }
+  function ready(){
+    callWhenReady('hello');
+  }
+  return {initWait:initWait, ready:ready};
+}
+
+describe('async function', function(){
+  it('pauses interpreter', function(){
+    var f = makeWaitAndReady();
+    var interp = new Interpreter('1; wait(); 2;', f.initWait);
+    assert.isTrue(interp.run());
+    assert.equal(interp.value, 1);
+    assert.equal(interp.paused_, true);
+    f.ready();
+    assert.equal(interp.paused_, false);
+    assert.isFalse(interp.run());
+    assert.equal(interp.value, 2);
+  });
+});
+
 describe('JS interpreter', function(){
   it('runs', function(){
     var interp = new Interpreter('1 + 1;');
@@ -17,13 +54,35 @@ describe('JS interpreter', function(){
     it('have their ast bodies stored in a global object', function(){
       var bodies = {};
       var interp = new Interpreter(
-        `function foo(){ return a; }; var abc = 17;`,
+        `function foo(){ return 1; };
+        wait()`,
         undefined, undefined, bodies);
       assert.property(interp, 'userFunctionBodies');
       assert.property(interp.userFunctionBodies, 'foo');
-      assert.notProperty(Interpreter.UserFunctionBodies, 'abc');
+      assert.notProperty(interp.userFunctionBodies, 'abc');
     });
     it('always look up their asts in the global scope', function(){
+      var bodies = {};
+      var f = makeWaitAndReady();
+      var interp = new Interpreter(
+        `function foo(){ return 1; };
+         var abc = 17;
+         foo();
+         wait();
+         foo();
+         `,
+        f.initWait, undefined, bodies);
+      assert.property(interp, 'userFunctionBodies');
+      assert.property(interp.userFunctionBodies, 'foo');
+      assert.notProperty(interp.userFunctionBodies, 'abc');
+
+      assert.isTrue(interp.run()); // should be paused
+      assert.equal(interp.value, 1);
+      interp.userFunctionBodies.foo.body[0].argument.value = 2;
+      assert.isTrue(interp.run());
+      f.ready();
+      assert.isFalse(interp.run());
+      assert.equal(interp.value, 2);
     });
   });
   describe('functions', function(){
@@ -42,7 +101,7 @@ describe('JS interpreter', function(){
     });
   });
   describe('asts', function(){
-    it('can be diffed to find what function bodies have changed', function(){
+    it('can be diffed to find which function bodies have changed', function(){
       // change to number of arguments counts as a change to the surrouding body
       // see dal segno for logic
     });
@@ -70,14 +129,6 @@ describe('JS interpreter', function(){
       assert.notProperty(newFuncs, 'a');
       assert.property(newFuncs, 'foo');
     });
-  });
-});
-
-describe('testing environment', function(){
-  it('has globals', function(){
-    assert.isDefined(acorn);
-    assert.isDefined(acorn.walk);
-    assert.isDefined(Interpreter);
   });
 });
 

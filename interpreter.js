@@ -50,9 +50,10 @@ if (typeof window === 'undefined') {
  *     global scope object.
  * @constructor
  */
-var Interpreter = function(code, opt_initFunc, opt_finishedCallback) {
+var Interpreter = function(code, opt_initFunc, opt_finishedCallback, opt_functionBodies) {
   this.initFunc_ = opt_initFunc;
   this.finishedCallback_ = opt_finishedCallback;
+  this.userFunctionBodies = opt_functionBodies;
   this.UNDEFINED = this.createPrimitive(undefined);
   this.ast = acorn.parse(code);
   this.paused_ = false;
@@ -1275,12 +1276,22 @@ Interpreter.prototype.createRegExp = function(obj, data) {
  * @param {Object} opt_scope Optional parent scope.
  * @return {!Object} New function.
  */
+//TOMHERE this could be relevant
 Interpreter.prototype.createFunction = function(node, opt_scope) {
   var func = this.createObject(this.FUNCTION);
   func.parentScope = opt_scope || this.getScope();
-  func.node = node;
+  if (this.userFunctionBodies && node.id) {
+    if (this.userFunctionBodies.hasOwnProperty(node.id.name)){
+      console.log('warning: overwriting function body for name', node.id.name);
+    }
+    this.userFunctionBodies[node.id.name] = node.body;
+    func.node = node
+    node.body = null // look it up please!
+  } else {
+    func.node = node;
+  }
   this.setProperty(func, 'length',
-                   this.createPrimitive(func.node.params.length), true);
+                   this.createPrimitive(node.params.length), true);
   return func;
 };
 
@@ -1857,8 +1868,17 @@ Interpreter.prototype['stepCallExpression'] = function() {
         state.func_ = state.member_;
       }
       if (state.func_.node) {
-        var scope =
-            this.createScope(state.func_.node.body, state.func_.parentScope);
+        var scope;
+        if (state.func_.node.body === null){
+          //TODO these body-swapped functions are going to report the wrong
+          // source code line numbers, should change to do the substitution
+          // at the function declaration node level instead of the body level.
+          scope = this.createScope(
+            this.userFunctionBodies[state.func_.node.id.name]);
+        } else {
+          scope =
+              this.createScope(state.func_.node.body, state.func_.parentScope);
+        }
         // Add all arguments.
         for (var i = 0; i < state.func_.node.params.length; i++) {
           var paramName = this.createPrimitive(state.func_.node.params[i].name);
@@ -1873,11 +1893,21 @@ Interpreter.prototype['stepCallExpression'] = function() {
                            state.arguments[i]);
         }
         this.setProperty(scope, 'arguments', argsList);
-        var funcState = {
-          node: state.func_.node.body,
-          scope: scope,
-          thisExpression: state.funcThis_
-        };
+
+        var funcState;
+        if (state.func_.node.body === null){
+          funcState = {
+            node: this.userFunctionBodies[state.func_.node.id.name],
+            scope: scope,
+            thisExpression: state.funcThis_
+          };
+        } else {
+          funcState = {
+            node: state.func_.node.body,
+            scope: scope,
+            thisExpression: state.funcThis_
+          };
+        }
         this.stateStack.unshift(funcState);
         state.value = this.UNDEFINED;  // Default value if no explicit return.
       } else if (state.func_.nativeFunc) {
