@@ -48,8 +48,9 @@ if (typeof window === 'undefined') {
  *     global scope object.
  * @constructor
  */
-var Interpreter = function(code, opt_initFunc) {
+var Interpreter = function(code, opt_initFunc, opt_finishedCallback) {
   this.initFunc_ = opt_initFunc;
+  this.finishedCallback_ = opt_finishedCallback;
   this.UNDEFINED = this.createPrimitive(undefined);
   this.ast = acorn.parse(code);
   this.paused_ = false;
@@ -2414,8 +2415,10 @@ Interpreter.prototype['stepProgram'] = function() {
     state.n_ = n + 1;
     this.stateStack.unshift({node: node.body[n]});
   } else {
-    var funcs = this.findNewFunctions(this.stateStack.shift().scope);
-    console.log(funcs);
+    var scopeProps = this.stateStack.shift().scope.properties;
+    if (this.finishedCallback_){
+      this.finishedCallback_(scopeProps);
+    }
   }
 };
 
@@ -2428,13 +2431,12 @@ Interpreter.prototype.getInitialProperties = function(){
 var initialProperties = (new Interpreter()).getInitialProperties()
 
 // Find functions added to scope
-Interpreter.prototype.findNewFunctions = function(scope){
+Interpreter.prototype.findNewFunctions = function(scopeProps){
   var funcs = {};
-  for (var prop of Object.keys(scope.properties)){
+  for (var prop of Object.keys(scopeProps)){
     if (!Object.prototype.hasOwnProperty.call(initialProperties, prop)) {
-      console.log('found new prop:', prop);
-      if (this.isa(scope.properties[prop], this.FUNCTION)) {
-        funcs[prop] = scope.properties[prop];
+      if (this.isa(scopeProps[prop], this.FUNCTION)) {
+        funcs[prop] = scopeProps[prop];
       };
     }
   }
