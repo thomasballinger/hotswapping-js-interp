@@ -1,4 +1,13 @@
 /**
+ * Forked from https://github.com/NeilFraser/JS-Interpreter
+ *
+ * at git commit 9c09d45c00d571be59b62319d2100658b728ce0f the entire project
+ * was copyright 2013 Google Inc.
+ *
+ * Changes since then are copyright 2016 Thomas Ballinger.
+ *
+ * original license follows:
+ *
  * @license
  * JavaScript Interpreter
  *
