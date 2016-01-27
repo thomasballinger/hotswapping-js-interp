@@ -1874,7 +1874,8 @@ Interpreter.prototype['stepCallExpression'] = function() {
           // source code line numbers, should change to do the substitution
           // at the function declaration node level instead of the body level.
           scope = this.createScope(
-            this.userFunctionBodies[state.func_.node.id.name]);
+            this.userFunctionBodies[state.func_.node.id.name],
+            state.func_.parentScope);
         } else {
           scope =
               this.createScope(state.func_.node.body, state.func_.parentScope);
