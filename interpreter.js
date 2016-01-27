@@ -2475,17 +2475,23 @@ Interpreter.prototype.findNewFunctions = function(scopeProps){
 // Plan:
 // first, make named functions always lookup ASTs in global scope
 // next, detect functions introduced by a user's program on completion
+// next, deepcopy entire interpreter state so several programs can run in it concurrently
 // next, export a function (mostly its environment) from one interpreter to another
 //   carefully deepcopy function scope: it needs to be identity-correct wrt
 //   object types: interp1.ARRAY is different than interp2.ARRAY, carefully
 //   transfer over.
 // next, record when function body ast accesses happen
-// next, deepcopy entire interpreter state for rewinds
 // next, ast diffing to find what functions have changed
 // next, get source code line logging working from all functions
 //
 // Maybe harvesting functions isn't required? nah let's do it, it'll
 // be useful for debugging
+//
+//
+// Turns out moving objects from one environment to another is pretty annoying.
+// Instead, we'll use only a single interpreter and swap out the state.
+//
+// We will need to deepcopy environments no matter what for snapshots.
 
 /*
 Interpreter.interpForFunction = function(func, opt_initFunc) {

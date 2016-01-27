@@ -90,47 +90,8 @@ describe('JS interpreter', function(){
       assert.equal(interp.value, 2);
     });
   });
-  describe('functions', function(){
-    describe('anonymous functions', function(){
-      it('can be invoked in a different interpreter than where they were defined', function(){
-        var finalScopeProps;
-        var interp1 = new Interpreter(
-          'var abc = function(){ return a; }; var a = 1;',
-          undefined,
-          function(s){ finalScopeProps = s; });
-        assert.isFalse(interp1.run());
-        var exportedAbc = finalScopeProps.abc;
-
-        var interp2 = new Interpreter('abc()', function(interp, scope){
-          interp.setProperty(scope, 'abc', exportedAbc);
-        });
-        assert.isFalse(interp2.run());
-        assert.equal(interp2.value, 1);
-      });
-    });
-
-    //TODO need to better understand values inside an interpreter vs outside vs in another interp
-
-    describe('named functions', function(){
-      it('can be invoked in a different interpreter than where they were defined', function(){
-        var finalScopeProps;
-        var userDefinedBodies = {};
-        var interp1 = new Interpreter(
-          'function abc(){ return a; }; var a = 1;',
-          undefined,
-          function(s){ finalScopeProps = s; },
-          userDefinedBodies);
-        assert.isFalse(interp1.run());
-        var exportedAbc = finalScopeProps.abc;
-
-        var interp2 = new Interpreter('abc()', function(interp, scope){
-          interp.setProperty(scope, 'abc', exportedAbc);
-        }, undefined, userDefinedBodies);
-        assert.isFalse(interp2.run());
-        assert.equal(interp2.value, 1);
-      });
-    });
-    it('still work as expected wrt typeof checks and interpreter isa checks', function(){
+  describe('interpreter threads', function(){
+    it('can run concurrently', function(){
     });
     it('are not affected by changes in the environments of the functions from which they were copied', function(){
       // (check that deepcopies work)
