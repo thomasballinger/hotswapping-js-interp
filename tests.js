@@ -1,6 +1,7 @@
 'use strict';
 /* globals Interpreter */
 /* globals acorn */
+/* globals deepcopy */
 
 /*
  * Tests functionality added by me@ballingt.com, does not test
@@ -16,33 +17,39 @@ describe('testing environment', function(){
   it('has globals', function(){
     assert.isDefined(acorn);
     assert.isDefined(acorn.walk);
+    assert.isDefined(deepcopy);
     assert.isDefined(Interpreter);
   });
 });
 
 function makeWaitAndReady(){
-  var callWhenReady;
+  var isReady = false;
   function initWait(interpreter, scope){
-    function wait(callback){
-      callWhenReady = callback;
+    function wait(){
+      return function(){ return isReady; };
     }
+    wait.finish = function(){
+      return 17;
+    };
     interpreter.setProperty(scope, 'wait',
                             interpreter.createAsyncFunction(wait));
   }
   function ready(){
-    callWhenReady('hello');
+    isReady = true;
   }
   return {initWait:initWait, ready:ready};
 }
 
 describe('async function', function(){
-  it('pauses interpreter', function(){
+  it.only('pauses interpreter', function(){
     var f = makeWaitAndReady();
-    var interp = new Interpreter('1; wait(); 2;', f.initWait);
+    var interp = new Interpreter('1; var a = wait(); 2;', f.initWait);
     assert.isTrue(interp.run());
     assert.equal(interp.value, 1);
     assert.equal(interp.paused_, true);
     f.ready();
+    assert.equal(interp.paused_, true);
+    assert.isTrue(interp.step());
     assert.equal(interp.paused_, false);
     assert.isFalse(interp.run());
     assert.equal(interp.value, 2);
@@ -92,6 +99,20 @@ describe('JS interpreter', function(){
   });
   describe('snapshots', function(){
     it('are not affected by changes in the environments', function(){
+      var f = makeWaitAndReady();
+      var interp1 = new Interpreter(
+        `var abc = 17;
+         wait();
+         abc = 2;
+         `,
+        f.initWait);
+      assert.isTrue(interp1.run());
+      var interp2 = interp1.copy();
+      assert.isTrue(interp2.run());
+      f.ready()
+      assert.isFalse
+
+
       // (check that deepcopies work)
     });
     //it('are not affected by builtins being modified', function(){});
@@ -119,17 +140,6 @@ describe('JS interpreter', function(){
       assert.isFalse(interp.run());
       assert.property(finalScopeProps, 'a');
       assert.property(finalScopeProps, 'foo');
-    });
-    it('can be identified', function(){
-      var finalScopeProps;
-      var interp = new Interpreter(
-        `function foo(){ return a; }; var a = 1;`,
-        undefined,
-        function(s){ finalScopeProps = s; });
-      assert.isFalse(interp.run());
-      var newFuncs = interp.findNewFunctions(finalScopeProps);
-      assert.notProperty(newFuncs, 'a');
-      assert.property(newFuncs, 'foo');
     });
   });
 });

@@ -39,6 +39,7 @@ if (typeof window === 'undefined') {
   // code expects acorn to be globally available
   global.acorn = require('acorn');
   global.acorn.walk = require('acorn/dist/walk');
+  global.deepcopy = require('./deepcopy');
 }
 
 
@@ -68,7 +69,10 @@ var Interpreter = function(code, opt_initFunc, opt_finishedCallback, opt_functio
 Interpreter.prototype.step = function() {
   if (!this.stateStack.length) {
     return false;
-  } else if (this.paused_) {
+  } else if (this.paused_){
+    if (this.isReady()) {
+      this.onReady();
+    }
     return true;
   }
   var state = this.stateStack[0];
@@ -82,8 +86,24 @@ Interpreter.prototype.step = function() {
  *     false if no more instructions.
  */
 Interpreter.prototype.run = function() {
-  while(!this.paused_ && this.step()) {};
-  return this.paused_;
+  while (true){
+    var more = this.step();
+    if (more && this.paused_){ return true; }
+    if (!more){ return false; }
+  }
+};
+
+/**
+ * Return a result from an async call.
+ */
+Interpreter.prototype.onReady = function() {
+  // this will all count for one tick
+  var state = this.stateStack[0];
+  var value = state.func_.asyncFunc.finish.apply(state.funcThis_, state.arguments);
+  state.value = value || this.UNDEFINED;
+  this.stateStack.unshift(state);
+  this.paused_ = false;
+  this.isReady = undefined;
 };
 
 /**
@@ -1314,6 +1334,9 @@ Interpreter.prototype.createNativeFunction = function(nativeFunc) {
  * @return {!Object} New function.
  */
 Interpreter.prototype.createAsyncFunction = function(asyncFunc) {
+  if (!asyncFunc.hasOwnProperty('finish')){
+    throw new Error("async functions need a .finish property");
+  }
   var func = this.createObject(this.FUNCTION);
   func.asyncFunc = asyncFunc;
   this.setProperty(func, 'length',
@@ -1915,14 +1938,7 @@ Interpreter.prototype['stepCallExpression'] = function() {
         state.value = state.func_.nativeFunc.apply(state.funcThis_,
                                                    state.arguments);
       } else if (state.func_.asyncFunc) {
-        var thisInterpreter = this;
-        var callback = function(value) {
-          state.value = value || this.UNDEFINED;
-          thisInterpreter.stateStack.unshift(state)
-          thisInterpreter.paused_ = false;
-        };
-        var argsWithCallback = state.arguments.concat(callback);
-        state.func_.asyncFunc.apply(state.funcThis_, argsWithCallback);
+        this.isReady = state.func_.asyncFunc.apply(state.funcThis_, state.arguments)
         this.paused_ = true;
         return;
       } else if (state.func_.eval) {
@@ -2451,35 +2467,15 @@ Interpreter.prototype['stepProgram'] = function() {
   }
 };
 
-Interpreter.prototype.getInitialProperties = function(){
-  var scope = this.createObject(null);
-  this.initGlobalScope(scope);
-  return scope.properties;
+Interpreter.prototype['copy'] = function(){
+
 }
 
-var initialProperties = (new Interpreter()).getInitialProperties()
-
-// Find functions added to scope
-Interpreter.prototype.findNewFunctions = function(scopeProps){
-  var funcs = {};
-  for (var prop of Object.keys(scopeProps)){
-    if (!Object.prototype.hasOwnProperty.call(initialProperties, prop)) {
-      if (this.isa(scopeProps[prop], this.FUNCTION)) {
-        funcs[prop] = scopeProps[prop];
-      };
-    }
-  }
-  return funcs;
-}
 
 // Plan:
 // first, make named functions always lookup ASTs in global scope
-// next, detect functions introduced by a user's program on completion
-// next, deepcopy entire interpreter state so several programs can run in it concurrently
-// next, export a function (mostly its environment) from one interpreter to another
-//   carefully deepcopy function scope: it needs to be identity-correct wrt
-//   object types: interp1.ARRAY is different than interp2.ARRAY, carefully
-//   transfer over.
+// next, change async protocol to a this.isReady() style
+// next, deepcopy entire interpreter state for backup
 // next, record when function body ast accesses happen
 // next, ast diffing to find what functions have changed
 // next, get source code line logging working from all functions
