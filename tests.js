@@ -90,12 +90,11 @@ describe('JS interpreter', function(){
       assert.equal(interp.value, 2);
     });
   });
-  describe('interpreter threads', function(){
-    it('can run concurrently', function(){
-    });
-    it('are not affected by changes in the environments of the functions from which they were copied', function(){
+  describe('snapshots', function(){
+    it('are not affected by changes in the environments', function(){
       // (check that deepcopies work)
     });
+    //it('are not affected by builtins being modified', function(){});
     it('still look up their bodies on each invocation', function(){
     });
     it('update a global table each time they are called', function(){

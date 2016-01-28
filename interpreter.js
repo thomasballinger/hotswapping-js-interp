@@ -2491,6 +2491,11 @@ Interpreter.prototype.findNewFunctions = function(scopeProps){
 // Turns out moving objects from one environment to another is pretty annoying.
 // Instead, we'll use only a single interpreter and swap out the state.
 //
+// Oh shoot that's a dumb idea: easy for threads to communicate with one another
+// via this.ARRAY etc. New idea: NO COMMUNICATION BETWEEN INTERPRETERS!
+// Now functions are only useful as the granularity of rewinds: closures
+// cannot be used to spawn new processes! This is a good thing: it's less work.
+//
 // We will need to deepcopy environments no matter what for snapshots.
 
 /*
