@@ -41,7 +41,7 @@ function makeWaitAndReady(){
 }
 
 describe('async function', function(){
-  it.only('pauses interpreter', function(){
+  it('pauses interpreter', function(){
     var f = makeWaitAndReady();
     var interp = new Interpreter('1; var a = wait(); 2;', f.initWait);
     assert.isTrue(interp.run());
@@ -104,16 +104,26 @@ describe('JS interpreter', function(){
         `var abc = 17;
          wait();
          abc = 2;
+         abc = 2;
          `,
         f.initWait);
       assert.isTrue(interp1.run());
       var interp2 = interp1.copy();
       assert.isTrue(interp2.run());
-      f.ready()
-      assert.isFalse
-
-
-      // (check that deepcopies work)
+      f.ready();
+      assert.isTrue(interp1.step());
+      assert.isTrue(interp1.step());
+      assert.isTrue(interp1.step());
+      assert.isTrue(interp1.step());
+      assert.isTrue(interp1.step());
+      assert.isTrue(interp1.step());
+      assert.isTrue(interp1.step());
+      assert.isTrue(interp1.step());
+      assert.isTrue(interp1.step());
+      assert.isTrue(interp1.step());
+      assert.isTrue(interp1.step());
+      assert.equal(interp1.getScope().properties.abc.data, 2);
+      assert.equal(interp2.getScope().properties.abc.data, 17);
     });
     //it('are not affected by builtins being modified', function(){});
     it('still look up their bodies on each invocation', function(){

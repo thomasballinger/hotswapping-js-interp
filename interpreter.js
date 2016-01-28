@@ -1307,6 +1307,7 @@ Interpreter.prototype.createFunction = function(node, opt_scope) {
     this.userFunctionBodies[node.id.name] = node.body;
     func.node = node
     node.body = null // look it up please!
+    //TODO change this if it's a problem for copying
   } else {
     func.node = node;
   }
@@ -2468,9 +2469,18 @@ Interpreter.prototype['stepProgram'] = function() {
 };
 
 Interpreter.prototype['copy'] = function(){
-
+  var copy = Object.create(Interpreter.prototype);
+  copy.initFunc_ = this.initFunc_;
+  copy.finishedCallback_ = undefined // really just for testing
+  copy.userFunctionBodies = this.userFunctionBodies // global, persistent
+  copy.ast = this.ast; // I hope the ast doesn't get mutated...
+                       // currently only place mutated is removing function
+                       // bodies to ensure they get placed in shared scope
+  copy.paused_ = this.paused_;
+  copy.isReady = this.isReady;
+  copy.stateStack = deepcopy(this.stateStack);
+  return copy;
 }
-
 
 // Plan:
 // first, make named functions always lookup ASTs in global scope
