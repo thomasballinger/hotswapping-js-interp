@@ -1304,10 +1304,9 @@ Interpreter.prototype.createFunction = function(node, opt_scope) {
     if (this.userFunctionBodies.hasOwnProperty(node.id.name)){
       console.log('warning: overwriting function body for name', node.id.name);
     }
-    this.userFunctionBodies[node.id.name] = node.body;
+    this.userFunctionBodies.saveBody(node.id.name, node.body);
     func.node = node
-    node.body = null // look it up please!
-    //TODO change this if it's a problem for copying
+    func.externalFunctionBody = true;
   } else {
     func.node = node;
   }
@@ -1893,16 +1892,16 @@ Interpreter.prototype['stepCallExpression'] = function() {
       }
       if (state.func_.node) {
         var scope;
-        if (state.func_.node.body === null){
+        var body;
+        if (state.func_.externalFunctionBody){
           //TODO these body-swapped functions are going to report the wrong
           // source code line numbers, should change to do the substitution
           // at the function declaration node level instead of the body level.
-          scope = this.createScope(
-            this.userFunctionBodies[state.func_.node.id.name],
-            state.func_.parentScope);
+          body = this.userFunctionBodies.getBody(state.func_.node.id.name)
+          scope = this.createScope(body, state.func_.parentScope);
         } else {
-          scope =
-              this.createScope(state.func_.node.body, state.func_.parentScope);
+          body = state.func_.node.body;
+          scope = this.createScope(body, state.func_.parentScope);
         }
         // Add all arguments.
         for (var i = 0; i < state.func_.node.params.length; i++) {
@@ -1919,20 +1918,11 @@ Interpreter.prototype['stepCallExpression'] = function() {
         }
         this.setProperty(scope, 'arguments', argsList);
 
-        var funcState;
-        if (state.func_.node.body === null){
-          funcState = {
-            node: this.userFunctionBodies[state.func_.node.id.name],
-            scope: scope,
-            thisExpression: state.funcThis_
-          };
-        } else {
-          funcState = {
-            node: state.func_.node.body,
-            scope: scope,
-            thisExpression: state.funcThis_
-          };
-        }
+        var funcState = {
+          node: body,
+          scope: scope,
+          thisExpression: state.funcThis_
+        };
         this.stateStack.unshift(funcState);
         state.value = this.UNDEFINED;  // Default value if no explicit return.
       } else if (state.func_.nativeFunc) {
