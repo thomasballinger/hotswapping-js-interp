@@ -2442,7 +2442,6 @@ Interpreter.prototype['step'] = Interpreter.prototype.step;
 Interpreter.prototype['run'] = Interpreter.prototype.run;
 
 
-
 Interpreter.prototype['stepProgram'] = function() {
   var state = this.stateStack[0];
   var node = state.node;
@@ -2470,6 +2469,14 @@ Interpreter.prototype['copy'] = function(){
   copy.isReady = this.isReady;
   copy.stateStack = deepcopy(this.stateStack);
   return copy;
+}
+
+// keeping the current stack intact (to preserve scope),
+// run a function then end the script.
+Interpreter.prototype['runFunctionNow'] = function(functionObject){
+  //TODO build an AST for running the function and dying
+  this.ast = acorn.parse(code);
+  this.stateStack.unshift[{node: this.ast, scope: scope, thisExpression: scope}];
 }
 
 // Plan:
