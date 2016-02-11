@@ -18,10 +18,10 @@ function TestingUserFunctionBodies(){
 }
 TestingUserFunctionBodies.prototype.getBody = function(name){
   return this.bodies[name];
-}
+};
 TestingUserFunctionBodies.prototype.saveBody = function(name, body){
   this.bodies[name] = body;
-}
+};
 
 describe('testing environment', function(){
   it('has globals', function(){
@@ -122,17 +122,9 @@ describe('JS interpreter', function(){
       var interp2 = interp1.copy();
       assert.isTrue(interp2.run());
       f.ready();
-      assert.isTrue(interp1.step());
-      assert.isTrue(interp1.step());
-      assert.isTrue(interp1.step());
-      assert.isTrue(interp1.step());
-      assert.isTrue(interp1.step());
-      assert.isTrue(interp1.step());
-      assert.isTrue(interp1.step());
-      assert.isTrue(interp1.step());
-      assert.isTrue(interp1.step());
-      assert.isTrue(interp1.step());
-      assert.isTrue(interp1.step());
+      for (var i=0; i < 11; i++){
+        assert.isTrue(interp1.step());
+      }
       assert.equal(interp1.getScope().properties.abc.data, 2);
       assert.equal(interp2.getScope().properties.abc.data, 17);
     });
@@ -145,10 +137,44 @@ describe('JS interpreter', function(){
     });
   });
   describe('forked interpreters', function(){
-    it('can run a function with existing environment', function(){
+    it('can exec', function(){
       // adds a new stack frame that runs a function then dies
+      var a = 0;
+      var b = 0;
+      var funcForExec;
+      var interp2;
+      var interp1 = new Interpreter(`
+        function foo(){
+          incrementB();
+          bar();
+        }
+        function bar(){
+          incrementB();
+        }
+        forkAndExec(foo);
+        incrementA();
+        `,
+        function(interp, scope){
+          interp.setProperty(scope, 'incrementA', interp.createNativeFunction(function(){ a += 1; }));
+          interp.setProperty(scope, 'incrementB', interp.createNativeFunction(function(){ b += 1; }));
+          interp.setProperty(scope, 'forkAndExec', interp.createNativeFunction(function(func){
+            interp2 = interp.copy();
+            funcForExec = func;
+          }));
+        } , undefined, new TestingUserFunctionBodies());
+      assert.isFalse(interp1.run());
+      assert.equal(a, 1);
+      assert.equal(b, 0);
+
+      interp2.exec(funcForExec);
+      assert.isFalse(interp2.run());
+
+      assert.equal(a, 1);
+      assert.equal(b, 2);
     });
   });
+  //TODO test that it's really a copy of the function in the new interp
+  // (this should work though, e)
 
   describe('user-defined functions', function(){
     it('can be extracted', function(){

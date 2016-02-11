@@ -2471,12 +2471,25 @@ Interpreter.prototype['copy'] = function(){
   return copy;
 }
 
-// keeping the current stack intact (to preserve scope),
-// run a function then end the script.
-Interpreter.prototype['runFunctionNow'] = function(functionObject){
-  //TODO build an AST for running the function and dying
-  this.ast = acorn.parse(code);
-  this.stateStack.unshift[{node: this.ast, scope: scope, thisExpression: scope}];
+// run a 0-arity interpreter function then end the script.
+Interpreter.prototype['exec'] = function(functionObject){
+  var ast = acorn.parse('foo();'); // build a function invocation AST
+  ast.start = this.stateStack[0].node.start;
+  ast.end = this.stateStack[0].node.end;
+  ast.body[0].expression.start = this.stateStack[0].node.start; // use call site
+  ast.body[0].expression.end = this.stateStack[0].node.end;
+
+  // Build an artificial stateStack which is so funcionObject is used
+  // this is the stateStack just after function lookup has occured
+  this.stateStack = [{node: ast.body[0].expression,
+                      value: functionObject,
+                      doneCallee_: true},
+                     {node: ast,
+                      n_: 1,
+                      scope: this.createScope(ast, null)}];
+
+  var scope = this.createScope(ast, null);
+  this.ast = ast;
 }
 
 // Plan:
@@ -2486,29 +2499,4 @@ Interpreter.prototype['runFunctionNow'] = function(functionObject){
 // next, record when function body ast accesses happen
 // next, ast diffing to find what functions have changed
 // next, get source code line logging working from all functions
-//
-// Maybe harvesting functions isn't required? nah let's do it, it'll
-// be useful for debugging
-//
-//
-// Turns out moving objects from one environment to another is pretty annoying.
-// Instead, we'll use only a single interpreter and swap out the state.
-//
-// Oh shoot that's a dumb idea: easy for threads to communicate with one another
-// via this.ARRAY etc. New idea: NO COMMUNICATION BETWEEN INTERPRETERS!
-// Now functions are only useful as the granularity of rewinds: closures
-// cannot be used to spawn new processes! This is a good thing: it's less work.
-//
-// We will need to deepcopy environments no matter what for snapshots.
-
-/*
-Interpreter.interpForFunction = function(func, opt_initFunc) {
-  if (
-  this.initFunc_ = opt_initFunc;
-  this.UNDEFINED = this.createPrimitive(undefined);
-  this.ast = acorn.parse(code);
-  this.paused_ = false;
-  var scope = this.createScope(this.ast, null);
-  this.stateStack = [{node: this.ast, scope: scope, thisExpression: scope}];
-};
-*/
+// next, fork interpreters and exec a function object
