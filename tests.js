@@ -144,10 +144,9 @@ describe('JS interpreter', function(){
     it('know what source code they correspond to even after being copied', function(){
     });
   });
-  describe('asts', function(){
-    it('can be diffed to find which function bodies have changed', function(){
-      // change to number of arguments counts as a change to the surrouding body
-      // see dal segno for logic
+  describe('forked interpreters', function(){
+    it('can run a function with existing environment', function(){
+      // adds a new stack frame that runs a function then dies
     });
   });
 
