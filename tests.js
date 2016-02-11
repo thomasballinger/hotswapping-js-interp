@@ -13,12 +13,23 @@ var assert = chai.assert;
 
 require('./interpreter.js'); // introduces global Interpreter object
 
+function TestingUserFunctionBodies(){
+  this.bodies = {};
+}
+TestingUserFunctionBodies.prototype.getBody = function(name){
+  return this.bodies[name];
+}
+TestingUserFunctionBodies.prototype.saveBody = function(name, body){
+  this.bodies[name] = body;
+}
+
 describe('testing environment', function(){
   it('has globals', function(){
     assert.isDefined(acorn);
     assert.isDefined(acorn.walk);
     assert.isDefined(deepcopy);
     assert.isDefined(Interpreter);
+    assert.isDefined(TestingUserFunctionBodies);
   });
 });
 
@@ -64,17 +75,17 @@ describe('JS interpreter', function(){
   });
   describe('named functions', function(){
     it('have their ast bodies stored in a global object', function(){
-      var bodies = {};
+      var bodies = new TestingUserFunctionBodies();
       var interp = new Interpreter(
         `function foo(){ return 1; };
         wait()`,
         undefined, undefined, bodies);
       assert.property(interp, 'userFunctionBodies');
-      assert.property(interp.userFunctionBodies, 'foo');
-      assert.notProperty(interp.userFunctionBodies, 'abc');
+      assert.property(interp.userFunctionBodies.bodies, 'foo');
+      assert.notProperty(interp.userFunctionBodies.bodies, 'abc');
     });
     it('always look up their asts in the global scope', function(){
-      var bodies = {};
+      var bodies = new TestingUserFunctionBodies();
       var f = makeWaitAndReady();
       var interp = new Interpreter(
         `function foo(){ return 1; };
@@ -85,12 +96,12 @@ describe('JS interpreter', function(){
          `,
         f.initWait, undefined, bodies);
       assert.property(interp, 'userFunctionBodies');
-      assert.property(interp.userFunctionBodies, 'foo');
-      assert.notProperty(interp.userFunctionBodies, 'abc');
+      assert.property(interp.userFunctionBodies.bodies, 'foo');
+      assert.notProperty(interp.userFunctionBodies.bodies, 'abc');
 
       assert.isTrue(interp.run()); // should be paused
       assert.equal(interp.value, 1);
-      interp.userFunctionBodies.foo.body[0].argument.value = 2;
+      interp.userFunctionBodies.bodies.foo.body[0].argument.value = 2;
       assert.isTrue(interp.run());
       f.ready();
       assert.isFalse(interp.run());
