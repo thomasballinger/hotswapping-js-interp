@@ -70,6 +70,10 @@ Interpreter.prototype.step = function() {
   if (!this.stateStack.length) {
     return false;
   } else if (this.paused_){
+    if (this.isReady === 'done'){
+      this.paused_ = false;
+      return false;
+    }
     if (this.isReady()) {
       this.onReady();
     }

@@ -174,7 +174,7 @@ describe('JS interpreter', function(){
     });
   });
   //TODO test that it's really a copy of the function in the new interp
-  // (this should work though, e)
+  // (not implemented yet I believe
 
   describe('user-defined functions', function(){
     it('can be extracted', function(){
