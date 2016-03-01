@@ -33,7 +33,7 @@
 'use strict';
 
 // Shim: for testing in with node, use global object as window.
-// In the browser environment, please make both of these available.
+// In the browser environment, please make all of these available.
 if (typeof window === 'undefined') {
   var window = global;
   // code expects acorn to be globally available
