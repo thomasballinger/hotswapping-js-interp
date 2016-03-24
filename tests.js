@@ -27,7 +27,7 @@ describe('testing environment', function(){
   it('has globals', function(){
     assert.isDefined(acorn);
     assert.isDefined(acorn.walk);
-    assert.isDefined(deepcopy);
+    assert.isDefined(deepCopy);
     assert.isDefined(Interpreter);
     assert.isDefined(TestingUserFunctionBodies);
   });
@@ -128,6 +128,35 @@ describe('JS interpreter', function(){
       assert.equal(interp1.getScope().properties.abc.data, 2);
       assert.equal(interp2.getScope().properties.abc.data, 17);
     });
+
+    it('really?', function(){
+      var f = makeWaitAndReady();
+      var interp1 = new Interpreter(
+        `var abc = 17;
+         abc = 2`,
+        f.initWait);
+      interp1.step();
+      interp1.step();
+      interp1.step();
+      interp1.step();
+      interp1.step();
+      assert.equal(interp1.getValueFromScope('abc').data, 17);
+      var copy = interp1.copy();
+      assert.equal(copy.getValueFromScope('abc').data, 17);
+      interp1.step();
+      interp1.step();
+      interp1.step();
+      interp1.step();
+      interp1.step();
+      interp1.step();
+      interp1.step();
+      interp1.step();
+
+      assert.equal(interp1.getValueFromScope('abc').data, 2);
+      assert.equal(copy.getValueFromScope('abc').data, 17);
+    });
+
+    /*
     //it('are not affected by builtins being modified', function(){});
     it('still look up their bodies on each invocation', function(){
     });
@@ -135,6 +164,7 @@ describe('JS interpreter', function(){
     });
     it('know what source code they correspond to even after being copied', function(){
     });
+    */
   });
   describe('forked interpreters', function(){
     it('can exec', function(){

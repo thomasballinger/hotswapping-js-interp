@@ -177,6 +177,10 @@
       exports = module.exports = deepCopy;
     }
   } else {
-    window.deepcopy = deepCopy;
+    if (window.deepCopy){
+      console.log('carefully avoiding loading deepCopy a second time...');
+    } else {
+      window.deepCopy = deepCopy;
+    }
   }
 })();

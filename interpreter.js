@@ -39,7 +39,7 @@ if (typeof window === 'undefined') {
   // code expects acorn to be globally available
   global.acorn = require('acorn');
   global.acorn.walk = require('acorn/dist/walk');
-  global.deepcopy = require('./deepcopy');
+  global.deepCopy = require('./deepcopy');
 }
 
 
@@ -2471,7 +2471,7 @@ Interpreter.prototype['copy'] = function(){
                        // bodies to ensure they get placed in shared scope
   copy.paused_ = this.paused_;
   copy.isReady = this.isReady;
-  copy.stateStack = deepcopy(this.stateStack);
+  copy.stateStack = deepCopy(this.stateStack);
   return copy;
 }
 
@@ -2499,7 +2499,7 @@ Interpreter.prototype['exec'] = function(functionObject){
 // Plan:
 // first, make named functions always lookup ASTs in global scope
 // next, change async protocol to a this.isReady() style
-// next, deepcopy entire interpreter state for backup
+// next, deepCopy entire interpreter state for backup
 // next, record when function body ast accesses happen
 // next, ast diffing to find what functions have changed
 // next, get source code line logging working from all functions
