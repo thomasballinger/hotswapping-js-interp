@@ -170,7 +170,7 @@ describe('JS interpreter', function(){
       assert.property(copy, 'FUNCTION');
       assert.property(copy, 'NUMBER');
       assert.property(copy, 'OBJECT');
-      assert.property(copy, 'REGEX');
+      assert.property(copy, 'REGEXP');
       assert.property(copy, 'STRING');
       assert.property(copy, 'UNDEFINED');
     });

@@ -2462,8 +2462,15 @@ Interpreter.prototype['stepProgram'] = function() {
 };
 
 Interpreter.prototype['copy'] = function(){
-  var copy = Object.create(Interpreter.prototype);
-  copy.initFunc_ = this.initFunc_;
+  return deepCopy(this);
+}
+
+Interpreter.prototype['deepCopyCreate'] = function(){
+  return Object.create(Interpreter.prototype);
+}
+
+Interpreter.prototype['deepCopyPopulate'] = function(copy, memo, innerDeepCopy){
+  copy.initFunc_ = this.initFunc_; // immuatble
   copy.finishedCallback_ = undefined // really just for testing
   copy.userFunctionBodies = this.userFunctionBodies // global, persistent
   copy.ast = this.ast; // I hope the ast doesn't get mutated...
@@ -2471,9 +2478,19 @@ Interpreter.prototype['copy'] = function(){
                        // bodies to ensure they get placed in shared scope
   copy.paused_ = this.paused_;
   copy.isReady = this.isReady;
-  copy.stateStack = deepCopy(this.stateStack);
-  return copy;
+  copy.stateStack = innerDeepCopy(this.stateStack, memo);
+
+  copy.ARRAY     = innerDeepCopy(this.ARRAY, memo);
+  copy.BOOLEAN   = innerDeepCopy(this.BOOLEAN, memo);
+  copy.DATE      = innerDeepCopy(this.DATE, memo);
+  copy.FUNCTION  = innerDeepCopy(this.FUNCTION, memo);
+  copy.NUMBER    = innerDeepCopy(this.NUMBER, memo);
+  copy.OBJECT    = innerDeepCopy(this.OBJECT, memo);
+  copy.REGEXP    = innerDeepCopy(this.REGEXP, memo);
+  copy.STRING    = innerDeepCopy(this.STRING, memo);
+  copy.UNDEFINED = innerDeepCopy(this.UNDEFINED, memo);
 }
+
 
 // run a 0-arity interpreter function then end the script.
 Interpreter.prototype['exec'] = function(functionObject){
