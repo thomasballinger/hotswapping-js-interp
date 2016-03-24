@@ -102,7 +102,7 @@
 
   function isAcorn(obj){
     return (obj.constructor === acorn.Node ||
-            (obj.hasOwnProperty('start') && obj.hasOwnProperty('end')));
+            (obj.start !== undefined && obj.end !== undefined));
   }
   function isPrimitive(obj){ return obj.isPrimitive; }
 
