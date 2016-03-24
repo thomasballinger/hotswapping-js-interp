@@ -129,33 +129,6 @@ describe('JS interpreter', function(){
       assert.equal(interp2.getScope().properties.abc.data, 17);
     });
 
-    it('really?', function(){
-      var f = makeWaitAndReady();
-      var interp1 = new Interpreter(
-        `var abc = 17;
-         abc = 2`,
-        f.initWait);
-      interp1.step();
-      interp1.step();
-      interp1.step();
-      interp1.step();
-      interp1.step();
-      assert.equal(interp1.getValueFromScope('abc').data, 17);
-      var copy = interp1.copy();
-      assert.equal(copy.getValueFromScope('abc').data, 17);
-      interp1.step();
-      interp1.step();
-      interp1.step();
-      interp1.step();
-      interp1.step();
-      interp1.step();
-      interp1.step();
-      interp1.step();
-
-      assert.equal(interp1.getValueFromScope('abc').data, 2);
-      assert.equal(copy.getValueFromScope('abc').data, 17);
-    });
-
     it('have all the required properties', function(){
       var interp1 = new Interpreter(
         `var abc = 17;

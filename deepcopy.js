@@ -101,8 +101,7 @@
   }
 
   function isAcorn(obj){
-    return (obj.constructor === acorn.Node ||
-            (obj.start !== undefined && obj.end !== undefined));
+    return (obj.start !== undefined && obj.end !== undefined);
   }
   function isPrimitive(obj){ return obj.isPrimitive; }
 
