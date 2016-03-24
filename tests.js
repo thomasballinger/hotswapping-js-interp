@@ -156,6 +156,25 @@ describe('JS interpreter', function(){
       assert.equal(copy.getValueFromScope('abc').data, 17);
     });
 
+    it('have all the required properties', function(){
+      var interp1 = new Interpreter(
+        `var abc = 17;
+         wait();
+         abc = 2;
+         abc = 2;
+         `);
+      var copy = interp1.copy();
+      assert.property(copy, 'ARRAY');
+      assert.property(copy, 'BOOLEAN');
+      assert.property(copy, 'DATE');
+      assert.property(copy, 'FUNCTION');
+      assert.property(copy, 'NUMBER');
+      assert.property(copy, 'OBJECT');
+      assert.property(copy, 'REGEX');
+      assert.property(copy, 'STRING');
+      assert.property(copy, 'UNDEFINED');
+    });
+
     /*
     //it('are not affected by builtins being modified', function(){});
     it('still look up their bodies on each invocation', function(){
