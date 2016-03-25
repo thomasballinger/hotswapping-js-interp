@@ -94,7 +94,8 @@
   function isBrowser(obj){
     if (typeof window === 'undefined') {
       return (obj === global ||
-             obj === process);
+             obj === process ||
+             obj === console);
     }
     return (obj === window ||
             obj === console);

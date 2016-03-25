@@ -38,7 +38,9 @@ if (typeof window === 'undefined') {
   var window = global;
   // code expects acorn to be globally available
   global.acorn = require('acorn');
+  // when ./acorn.js is loaded in a browser, walk has already been attached
   global.acorn.walk = require('acorn/dist/walk');
+
   global.deepCopy = require('./deepcopy');
 }
 
@@ -2511,6 +2513,10 @@ Interpreter.prototype['exec'] = function(functionObject){
 
   var scope = this.createScope(ast, null);
   this.ast = ast;
+}
+
+if (typeof window === 'undefined') {
+  global.Interpreter = Interpreter;
 }
 
 // Plan:
